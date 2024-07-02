@@ -79,14 +79,13 @@ public class Chooser extends CordovaPlugin {
                     if (uri != null) {
                         Activity activity = cordova.getActivity();
                         ContentResolver contentResolver = activity.getContentResolver();
-                        InputStream inputStream = contentResolver.openInputStream(uri);
                         String displayName = "File";
                         String uriString = uri.toString();
                         String mimeType = null;
                         String extension = null;
                         String filePath = null;
 
-                        int size = inputStream.available();
+                        int size = 0;
                         if (this.maxFileSize != 0) {
                             if (size > this.maxFileSize) {
                                 this.callback.error("Invalid size");
@@ -125,12 +124,9 @@ public class Chooser extends CordovaPlugin {
                             mimeType = "application/octet-stream";
                         }
 
-                        filePath = activity.getCacheDir().getAbsolutePath() + '/' + displayName;
-                        copyInputStreamToFile(inputStream, filePath);
-
                         try {
                             JSONObject result = new JSONObject();
-                            result.put("path", new File(filePath).exists() ? "file://" + filePath : "");
+                            result.put("path", uri);
                             result.put("name",  this.getFileName(displayName)); // without extension
                             result.put("displayName",  displayName); // with extension
                             result.put("mimeType", mimeType);
@@ -153,34 +149,6 @@ public class Chooser extends CordovaPlugin {
             }
         } catch (Exception err) {
             this.callback.error("Failed to read file: " + err.toString());
-        }
-    }
-
-    private void copyInputStreamToFile(InputStream inputStream, String file) {
-        OutputStream out = null;
-
-        try {
-            out = new FileOutputStream(file);
-            byte[] buf = new byte[1024];
-            int len;
-            while ((len = inputStream.read(buf)) > 0) {
-                out.write(buf, 0, len);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            // Ensure that the InputStreams are closed even if there's an exception.
-            try {
-                if (out != null) {
-                    out.close();
-                }
-
-                // If you want to close the "in" InputStream yourself then remove this
-                // from here but ensure that you close it yourself eventually.
-                inputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 
